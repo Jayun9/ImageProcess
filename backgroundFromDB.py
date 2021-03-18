@@ -100,7 +100,8 @@ def main():
         try:
             dst, trans_w, trans_h = img_process.composite_background(src, image['width'], image['height'])
         except:
-            dst, trans_w, trans_h = img_process.composite_bbox_background(src, image['bbox'])
+            dst, annotation = img_process.set_bbox_src(src, annotation)
+            dst, trans_w, trans_h = img_process.composite_background(dst, dst.shape[1], dst.shape[0])
         new_annotations = img_process.get_new_annotation(annotation, trans_w, trans_h)
         for new_annotation in new_annotations:
             annotation_list.append(new_annotation)

@@ -102,6 +102,7 @@ class ImgProcess:
             segment_list.append(new_seg.tolist())
         return segment_list
 
+    # 확인용
     def confirm(self, annotations, src):
         for annotation in annotations:
             segmentation = annotation['segmentation']
@@ -149,7 +150,7 @@ class ImgProcess:
 
     def get_resize_annotation(self, annotations, fx, fy):
         for annotation in annotations:
-            new_area = annotation['area'] + fx
+            new_area = annotation['area'] * fx
             new_segmentation = self.get_resize_segmentation(annotation['segmentation'], fx, fy)
             new_bbox = self.get_resize_bbox(annotation['bbox'], fx, fy)
             annotation.update({'area': new_area})
@@ -157,5 +158,27 @@ class ImgProcess:
             annotation.update({'bbox': new_bbox})
         return annotations
 
-    def composite_bbox_background(self, src, bbox, param1):
-        pass
+    # 제일 바깥족에 있는 bbox로 모은다.
+    def get_outer_most_bbox(self, annotations):
+        bbox_list = [annotation['bbox'] for annotation in annotations]
+        x = [bbox[0] for bbox in bbox_list]
+        y = [bbox[1] for bbox in bbox_list]
+        w = [bbox[0] + bbox[2] for bbox in bbox_list]
+        h = [bbox[1] + bbox[3] for bbox in bbox_list]
+        outer_most_bbox = [min(x), min(y), max(w) - min(x), max(h) - min(y)]
+        return outer_most_bbox
+
+    def set_bbox_src(self, src, annotations):
+        outer_most_bbox = self.get_outer_most_bbox(annotations)
+        x = int(outer_most_bbox[0])
+        y = int(outer_most_bbox[1])
+        w = int(outer_most_bbox[2])
+        h = int(outer_most_bbox[3])
+        if len(src.shape) == 2:
+            dst = src[y:y + h, x:x + w]
+        else:
+            dst = src[y:y + h, x:x + w, :]
+        trans_x = -x
+        trans_y = -y
+        new_annotation = self.get_new_annotation(annotations, trans_x, trans_y)
+        return dst, new_annotation
